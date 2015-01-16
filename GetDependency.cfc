@@ -589,7 +589,7 @@ component accessors="true" output="false" {
       if (listFind(searchFor, variables.ORECORD.OTHER_FUNC_CALLS) gt 0) {
         // Filter search results on the basis of result type
         var qoqTempSResults = new query();
-        qoqTempSResults.setDBType("query);
+        qoqTempSResults.setDBType("query");
         qoqTempSResults.setAttributes(sResults = this.searchResults);
         qoqTempSResults.setSQL(
                 "SELECT * " &
