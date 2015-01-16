@@ -112,6 +112,9 @@ component accessors="true" output="false" {
   */
   variables.dumpCallCurrent = 0;
   
+  // Path of folder where extracted cfusion.jar is kept. It contains coldfusion's core class files
+  variables.cfRootParentPath = "";
+  
   // Initialize containers for results
   // Container to store CF functions list
   this.cfFunctions = arrayNew(1);
@@ -131,6 +134,7 @@ component accessors="true" output="false" {
   function init() {
     webRootPath = "C:\cfusion\my_app";
     webAppName = "myapp";
+    variables.cfRootParentPath = "<path of extracted cfusion.jar file>";
     showSearchResults = false;
     showNARecords = false;
     showNonNARecords = true;
@@ -269,8 +273,7 @@ component accessors="true" output="false" {
               funcList = metaObj.functions;
             }
           }
-        }
-        catch (application e) {
+        } catch (application e) {
           compFileData = "";
           if (arrayLen(funcList) eq 0) {
             funcList = ["NA"];
@@ -343,78 +346,103 @@ component accessors="true" output="false" {
               // Exclude specified results
               if (matchCount gt 0) {
                 excludeThis = false;
-                  for (var idxExclMatch in excludeMatching) {
-                    if (reFindNoCase(".*#idxExclMatch#.*", searchMatchList[idxmatch]) gt 0) {
-                      excludeThis = true;
-                      break;
-                    }
-                    if (excludeThis) {
-                      continue;
-                    }
+                for (var idxExclMatch in excludeMatching) {
+                  if (reFindNoCase(".*#idxExclMatch#.*", searchMatchList[idxmatch]) gt 0) {
+                    excludeThis = true;
+                    break;
                   }
-                  // Insert search result
-                  if (match gt 0) {
-                    queryAddRow(this.searchResults);
-                    querySetCell(this.searchResults, "SNo", this.searchResults.recordCount);
-                    querySetCell(this.searchResults, "Search_Type", searchItem.searchTpye);
-                    querySetCell(this.searchResults, "Folder", listDeleteAt(compRelPath, listlen(copmRelPath, "."), "."));
-                    querySetCell(this.searchResults, "Component", listLast(compRelPath, "."));
-                    querySetCell(this.searchResults, "Function", func);
-                    querySetCell(this.searchResults, "Search_Pattern", searchItem.searchPattern);
-                    querySetCell(this.searchResults, "Group_ID", groupID);
-                    querySetCell(this.searchResults, "Matching_Text", searchMatchList[idxMatch]);
-                    querySetCell(this.searchResults, "Error", errorMsg);
-                  }
-                  // Set search items group ID
-                  if (matchCount gt 0 and
-                        (searchItem.searchType eq variables.ORECORD.ASSIGN_TAG or searchItem.searchType eq variables.ORECORD.ASSIGN_SCRIPT)) {
-                    // Check if need to update group ID
-                    groupSubCount = groupSubCount + 1;
-                    if (idxMatch neq matchCount) {
-                      if (searchMatchList[idxMatch] eq "NA" or (reFind(".*component.*=.*", searchMatchList[idxMatch]) gt 0 and groupSubCount gt 1)) {
-                        groupID = groupID + 1;
-                        groupSubCount = 0;
-                      }
-                    }
-                  } else {
+                }
+                if (excludeThis) {
+                  continue;
+                }
+              }
+              // Insert search result
+              if (match gt 0) {
+                queryAddRow(this.searchResults);
+                querySetCell(this.searchResults, "SNo", this.searchResults.recordCount);
+                querySetCell(this.searchResults, "Search_Type", searchItem.searchTpye);
+                querySetCell(this.searchResults, "Folder", listDeleteAt(compRelPath, listlen(copmRelPath, "."), "."));
+                querySetCell(this.searchResults, "Component", listLast(compRelPath, "."));
+                querySetCell(this.searchResults, "Function", func);
+                querySetCell(this.searchResults, "Search_Pattern", searchItem.searchPattern);
+                querySetCell(this.searchResults, "Group_ID", groupID);
+                querySetCell(this.searchResults, "Matching_Text", searchMatchList[idxMatch]);
+                querySetCell(this.searchResults, "Error", errorMsg);
+              }
+              // Set search items group ID
+              if (matchCount gt 0 and
+                    (searchItem.searchType eq variables.ORECORD.ASSIGN_TAG or searchItem.searchType eq variables.ORECORD.ASSIGN_SCRIPT)) {
+                // Check if need to update group ID
+                groupSubCount = groupSubCount + 1;
+                if (idxMatch neq matchCount) {
+                  if (searchMatchList[idxMatch] eq "NA" or (reFind(".*component.*=.*", searchMatchList[idxMatch]) gt 0 and groupSubCount gt 1)) {
                     groupID = groupID + 1;
                     groupSubCount = 0;
                   }
-                } // End of loop through matching results
-              } // End of loop through searhc items
-            } // End of loop through specified functions list
-          } // End of loop for components list including folder's components
-          dumpIt (dumpLabel="End loop over included components", newline="true");
-        } // End of loop for specified components list
-        
-        // Filter unique records
-        if (showUniqueRecords) {
-          // Get unique search resuls for further processing
-          var qoqUnique = new query();
-          qoqUnique.setDBType("query");
-          qoqUnique.setAttributes(sResult = this.searchResults);
-          qoqUnique.setSQL("SELECT DISTINCT Search_Type,Folder,Component,Function,Search_Pattern,Matching_Text,Group_ID,Error FROM sResult");
-          this.searchResults = qoqUnique.execute().getResults();
-        }
-      } // End of function doSearch
+                }
+              } else {
+                groupID = groupID + 1;
+                groupSubCount = 0;
+              }
+            } // End of loop through matching results
+          } // End of loop through searhc items
+        } // End of loop through specified functions list
+      } // End of loop for components list including folder's components
+      dumpIt (dumpLabel="End loop over included components", newline="true");
+    } // End of loop for specified components list
       
-      /**
-      * Show search results
-      */
-      public query function getSearchResults() {
-        return this.searchResults;
-      }
+    // Filter unique records
+    if (showUniqueRecords) {
+      // Get unique search resuls for further processing
+      var qoqUnique = new query();
+      qoqUnique.setDBType("query");
+      qoqUnique.setAttributes(sResult = this.searchResults);
+      qoqUnique.setSQL("SELECT DISTINCT Search_Type,Folder,Component,Function,Search_Pattern,Matching_Text,Group_ID,Error FROM sResult");
+      this.searchResults = qoqUnique.execute().getResults();
+    }
+  } // End of function doSearch
       
-      /**
-      * Format result for found component / function 
-      */ 
-      public query function getCompFuncDependency() {
-        var structFuncResults = structNew();
-        var errorMsg = "";
-        var metaInfo = "";
-        var subCompName = "";
-        var subCompPath = "";
-        if (this.searchResults.recordCount eq 0 and showNARecords) {
+  /**
+  * Show search results
+  */
+  public query function getSearchResults() {
+    return this.searchResults;
+  }
+    
+  /**
+  * Format result for found component / function 
+  */ 
+  public query function getCompFuncDependency() {
+    var structFuncResults = structNew();
+    var errorMsg = "";
+    var metaInfo = "";
+    var subCompName = "";
+    var subCompPath = "";
+    if (this.searchResults.recordCount eq 0 and showNARecords) {
+      queryAddRow(this.funcFinalResults);
+      querySetCell(this.funcFinalResults, "Folder", "NA");
+      querySetCell(this.funcFinalResults, "Component", "NA");
+      querySetCell(this.funcFinalResults, "Function", "NA");
+      querySetCell(this.funcFinalResults, "Sub_Component_Path", "NA");
+      querySetCell(this.funcFinalResults, "Sub_Component", "NA");
+      querySetCell(this.funcFinalResults, "Sub_Function", "NA");
+      querySetCell(this.funcFinalResults, "Error", "No search results");
+    } else {
+      // Build list from arrays
+      var lstExcludeFunctions = arrayToList(excludeFunctions);
+      // Build results for container function calls
+      if (listFind(searchFor, variables.ORECORD.INVOKE) gt 0) {
+        // Filter search results on the basis of result type
+        var qoqTempSResults = new query();
+        qoqTempSResults = setDBType("query");
+        qoqTempSResults = setAttributes(sResults = this.searchResults);
+        qoqTempSResults.setSQL(
+                "SELECT * " &
+                "FROM sResults " &
+                "WHERE search_type IN ('#variables.ORECORD.INVOKE#', '#variables.ORECORD.ASSING_TAG#', '#variables.ORECORD.ASSIGN_SCRIPT#') "
+            );
+        var tempSearchResults = qoqTempSResults.execute().getResult();
+        if (tempSearchResults.recordCount eq 0 and showNARecords) {
           queryAddRow(this.funcFinalResults);
           querySetCell(this.funcFinalResults, "Folder", "NA");
           querySetCell(this.funcFinalResults, "Component", "NA");
@@ -422,350 +450,511 @@ component accessors="true" output="false" {
           querySetCell(this.funcFinalResults, "Sub_Component_Path", "NA");
           querySetCell(this.funcFinalResults, "Sub_Component", "NA");
           querySetCell(this.funcFinalResults, "Sub_Function", "NA");
-          querySetCell(this.funcFinalResults, "Error", "No search results");
+          querySetCell(this.funcFinalResults, "Error", errorMsg);
         } else {
-          // Build list from arrays
-          var lstExcludeFunctions = arrayToList(excludeFunctions);
-          // Build results for container function calls
-          if (listFind(searchFor, variables.ORECORD.INVOKE) gt 0) {
-            // Filter search results on the basis of result type
-            var qoqTempSResults = new query();
-            qoqTempSResults = setDBType("query");
-            qoqTempSResults = setAttributes(sResults = this.searchResults);
-            qoqTempSResults.setSQL(
-                    "SELECT * " &
-                    "FROM sResults " &
-                    "WHERE search_type IN ('#variables.ORECORD.INVOKE#', '#variables.ORECORD.ASSING_TAG#', '#variables.ORECORD.ASSIGN_SCRIPT#') "
-                );
-            var tempSearchResults = qoqTempSResults.execute().getResult();
-            if (tempSearchResults.recordCount eq 0 and showNARecords) {
-              queryAddRow(this.funcFinalResults);
-              querySetCell(this.funcFinalResults, "Folder", "NA");
-              querySetCell(this.funcFinalResults, "Component", "NA");
-              querySetCell(this.funcFinalResults, "Function", "NA");
-              querySetCell(this.funcFinalResults, "Sub_Component_Path", "NA");
-              querySetCell(this.funcFinalResults, "Sub_Component", "NA");
-              querySetCell(this.funcFinalResults, "Sub_Function", "NA");
-              querySetCell(this.funcFinalResults, "Error", errorMsg);
-            } else {
-              // Sub component path information
-              var subCompPathList = structNew();
-              for (var idxTSR=1; idxTSR lte tempSearchResults.recordCount; idxTSR++) {
-                var newIdxTSR = idxTSR;
-                subCompName = "";
-                subCompPath = "";
-                errorMsg = "";
-                
-                // Biuld stucture format
-                var thisElem = tempSearchResults.Folder[idxTSR] & "." & tempSearchResults.Component[idxTSR] & "." & tempSearchResults.Function[idxTSR];
-                if (tempSearchResults.recordCount gt 0 and not structKeyExists(structFuncResults, thisElem)) {
-                  structFuncResults[thisElem] = structNew();
-                  structFuncResults[thisElem].Error = errorMsg;
-                  structFuncResults[thisElem].SubComponents = arrayNew(1);
-                }
-                
-                // read sub-component value from the matching search result
-                var compMatchingText = "";
-                if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_TAG
-                      or tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_SCRIPT) {
-                  var qoqSubComp = new query();
-                  qoqSubComp.setDBType("query");
-                  qoqSubComp.setAttributes(tSResults = tempSearchResults);
-                  qoqSubComp.setSQL(
-                          "SELECT * " &
-                          "FROM tSResults " &
-                          "WHERE (matching_text LIKE '%component%=%' " &
-                            "AND group_id = #tempSearchResults.group_id[idxTSR]#) "
-                      );
-                  qoqSubComp = qoqSubComp.execute().getResult();
-                  compMatchingText = tempSearchResults.matching_text;
-                } else if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.INVOKE) {
-                  compMatchingText = tempSearchResults.matching_text[idxTSR];
-                }
-                try {
-                  subCompName = reMatchNoCase("component="".+?""", compMatchingText);
-                  subCompName = listToArray(subCompoName[1], """")[2];
-                } catch (expression e) {
-                  subCompName = tempSearchResults.component[idxTSR];
-                }
-                
-                // Get function name
-                var funcMatchingText = "";
-                if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_TAG
-                      or tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_SCRIPT) {
-                  var qoqSubFunc = new query();
-                  qoqSubFunc.setDBType("query");
-                  qoqSubFunc.setAttributes(tSResults = tempSearchResults);
-                  qoqSubFunc.setSQL(
-                          "SELECT * " &
-                          "FORM tSResults " &
-                          "WHERE (matching_text LIKE '%function%=%' " &
-                                "OR matching_text LIKE '%method%=%') " &
-                              "AND group_id = #tempSearchResults.group_id[idxTSR]# "
-                      );
-                  var getSubFunc = qoqSubFun.execute().getResult();
-                  funcMatchingText = getSubFunc.matching_text;
-                  newIdxTSR = idxTSR + 1;
-                } else {
-                  funcMatchingText = tempSearchResults.matching_text[idxTSR];
-                }
-                var subFuncName = reMatchNoCase("(method|function)="".+?""", funcMatchingText);
-                subFuncName = listToArray(subFuncName[1], """")[2];
-                
-                // Get sub component path
-                var subCompObj = "";
-                var metaInfo = "";
-                try {
-                  if (left(subCompName, 1) eq "##" and right(subCompname, 1) eq "##") {
-                    metaInfo = getMetaData(evaluate(subCompName));
-                    subCompName = listLast(metaInfo.name, ".");
-                  } else {
-                    if (left(tempSearchResults.folder[idxTSR], 4) eq "obj.") {
-                    // Get property type for component path
-                    var objMeta = getComponentMetaData(subCompName);
-                    // Index of property in array
-                    var idxProp = arrayFind(objMeta.properties, listLast(subCompName, "."));
-                    var propType = objMeta.properties[idxProp].type;
-                    metaInfo = getComponentMetaData(propType);
-                  } else {
-                    subCompName = replaceNoCase(subCompName, "APPLICATION.", "");
-                    var subCompObj = evaluate("Application.#subCompName#");
-                    metaInfo = getMetaData(subCompObj);
-                  }
-                }
-              } catch (expression e) {
-                if (subCompName eq "NA" and showNARecords eq false) {
-                  continue;
-                }
-              }
-              var subCompPath = "";
-              if (not isDefined("metaInfo.type")) {
-                subCompPath = "NA";
-                if (subCompName neq "NA" and subCompName neq "this") {
-                  errorMsg = "Sub-component not found";
-                }
-              } else if (metaInfo.type neq "component") {
-                subCompPath = "NA";
-                errorMsg = "Invalid sub-component (type: #metaInfo.type#);
-              } else {
-                subCompPath = metaInfo.fullName;
-                subCompPath = listChangeDelims(subCompPath, ",", ".");
-                subCompPath = listDeleteAt(subCompPath, 1);
-                subCompPath = listDeleteAt(subCompPath, listLen(subCompPath));
-                subCompPath = listChangeDelims(subComppath, ".", ",");
-              }
-              if (showNonNARecords eq false and subCompPath neq "NA") {
-                continue;
-              }
-              
-              // Get found sub-functions list for current sub-component
-              if (listFindNoCase(lstExcludeFunctions, subFuncName) gt 0) {
-                continue;
-              }
-              arrayAppend(structFuncResults[thisElem].subComponents, structNew());
-              var idxArraySubComp = arrayLen(structFuncResults[thisElem].subComponents);
-              thisSubElem = subCompPath & "." & subCompName & "." & subFuncName;
-              structFuncResults[thisElem].subComponents[idxArraySubComp][thisSubElem] = structNew();
-              structFuncResults[thisElem].subComponents[idxArraySubComp][thisSubElem].Error = errorMsg;
-              
-              queryAddrow(this.funcFinalResults);
-              querySetCell(this.funcFinalResults, "Folder", tempSearchResults.Folder[idxTSR]);
-              querySetCell(this.funcFinalResults, "Component", tempSearchResults.Component[idxTSR]);
-              querySetCell(this.funcFinalResults, "Function", tempSearchResults.Function[idxTSR]);
-              querySetCell(this.funcFinalResults, "Sub_Component_Path", subCompPath);
-              querySetCell(this.funcFinalResults, "Sub_Component", subFuncName);
-              querySetCell(this.funcFinalResults, "Error", errorMsg);
-              // Update loop counter
-              idxTSR = newIdxTSR;
-            }
-          }
-        } // End of if desired results type is ASSIGN_INVOKE
-        
-        // Biuld results for all other component function calls
-        if (listFind(searchFor, variables.ORECORD.OTHER_FUNC_CALLS) gt 0) {
-          // Filter search results on the basis of result type
-          var qoqTempSResults = new query();
-          qoqTempSResults.setDBType("query);
-          qoqTempSResults.setAttributes(sResults = this.searchResults);
-          qoqTempSResults.setSQL(
-                  "SELECT * " &
-                  "FROM sResults " &
-                  "WHERE search_type = '#variables.ORECORD.OTHER_FUNC_CALLS#' "
-              );
-          var tempSearchResults = qoqTempSResults.execute().getResults();
-          
-          // Save formatted results
-          for (var idxTSR=1; idxTSR lte tempSearchResults.recordCoun; idxTSR++) {
-            new newIdxTSR = idxTSR;
-            subCompPath = "";
+          // Sub component path information
+          var subCompPathList = structNew();
+          for (var idxTSR=1; idxTSR lte tempSearchResults.recordCount; idxTSR++) {
+            var newIdxTSR = idxTSR;
             subCompName = "";
-            subFuncName = "";
+            subCompPath = "";
             errorMsg = "";
             
-            // Get sub-component path
-            metaInfo = structNew();
-            var subCompObj = "";
-            try {
-              if (len(tempSearchResults.folder[idxTSR]) gt 0) {
-                metaInfo = getComponentMetaData(tempSearchResults.folder[idxTSR] & "." & tempSearchResults.component[idxTSR]);
-              } else {
-                metaInfo = getComponentMetaData(tempSearchResults.component[idxTSR]);
-              }
-            } catch (expression e) {
-              var subCompObj = evaluate("Application.#tempSearchResults.component[idxTSR]#");
-              metaInfo = getMetaData(subCompObj);
-            }
-            
-            // Get sub-component and sub-function name
-            var subFuncFullPath = replace(tempSearchResults.matching_text[idxTSR], "(", "");
-            var subFuncParts = listToArray(subFuncFullPath, ".");
-            var subFuncPartsCount = arrayLen(subFuncParts);
-            var subFuncName = subFuncParts[subFuncPartsCounts];
-            
-            // Check if function really exists in current component, if not then it must in parent component
-            if (subFuncPartsCount eq 1) {
-              // If function name is a coldfusion function then ignore
-              if (arrayFindNoCase(this.cfFunctions, subFuncName) gt 0
-                  or arrayFindNoCase(this.cfFunctions, "cf" & subFuncName) gt 0) {
-                continue;
-              }
-              
-              var currCompFunc = "";
-              var foundInCurrComp = false;
-              currCompFunc = metaInfo.functions;
-              for (var idxCFunc=1; idxCFunc lte arrayLen(currCompFunc); idxCFunc++) {
-                if (subFuncName eq currCompFunc[idxCFunc].name) {
-                  foundInCurrComp = true;
-                  subCompPath = tempSearchResults.folder[idxTSR];
-                  subCompName = tempSearchResults.component[idxTSR];
-                  break;
-                }
-              }
-              
-              if (not foundInCurrComp and structKeyExists(metaInfo, "extends") and isStruct(metaInfo.extends)) {
-                var subCompFullPath = metaInfo.extends.fullName;
-                subCompName = listLast(subCompFullPath, ".");
-                subCompPath = listDeleteAt(subCompFullPath, listLen(subCompFullPath, "."), ".");
-                if (listGetAt(subCompPath, 2, ".") neq "obj.") {
-                  subCompPath = listDeleteAt(subCompPath, 1, ".");
-                }
-              }
-            } else if (subFuncPartsCount gt 2) {
-              if (subFuncParts[1] eq "application") {
-                // Evaluate component path (without function name)
-                compObj = evaluate(listDeleteAt(subFuncFullPath, listLen(subFuncFullPath, "."), "."));
-                metaInfo = getMetaData(compObj);
-                subCompName = listLast(metaInfo.name, ".");
-                subCompPath = listDeleteAt(metaInfo.name, listLen(metaInfo.name, "."), ".");
-                if (listFirst(subCompPath, ".") eq webAppName) {
-                  subCompPath = listRest(subCompPath, ".");
-                }
-              } else {
-                subCompPath = arrayToList(subFuncParts);
-                subCompName = subFuncParts[subFuncPartsCount-1];
-                subCompPath = listDeleteAt(subCompPath, subFuncPartsCount);
-                subCompPath = listDeleteAt(subCompPath, subFuncPartsCount-1);
-                subCompPath = listChangeDelims(subCompPath, ".");
-              }
-            } else if (subFuncPartsCount gt 1) {
-              subCompName = subFuncParts[subFuncPartsCount-1];
-              if (subFuncParts[1] eq "this.") {
-                // Current component
-                subCompPath = tempSearchResults.folder[idxTSR];
-                subCompName = tempSearchResults.component[idxTSR];
-              } else {
-                ///////////// Find path within component //////////////
-                var foundPath = false;
-                // Find in arguments
-                funcList = metaInfo.functions;
-                for (var idxFunc=1; idxFunc lte arrayLen(funcList); idxFunc++) {
-                  if (funcList[idxFunc].name eq tempSearchResults.function[idxTSR]) {
-                    for (var idxFParam=1; idxFParam lte arrayLen(funcList[idxFunc].parameters); idxFParam++) {
-                      if (funcList[idxFunc.parameters[idxFParam].name eq subCompName) {
-                        foundPath = true;
-                        subCompPath = funcList[idxFunc].parameters[idxFParam].type;
-                      }
-                    }
-                  }
-                }
-                // Find in properties of current component
-                if (not foundPath and structKeyExists(metaInfo, "properties")) {
-                  for (var idxProp=1; idxProp lte arrayLen(metaInfo.properties); idxProp++) {
-                    if (metaInfo.properties[idxProp].name eq subCompName) {
-                      foundPath = true;
-                      subCompPath = metaInfo.propertiesp[idxProp].type;
-                      break;
-                    }
-                  }
-                }
-                // Find in variables of current component
-                if (not foundPath) {
-                  // Filter variable declarations in search results
-                  var qoqNewInstance = new query();
-                  qoqNewInstance.setDBType("query");
-                  qoqNewInstance.setAttributes(sResults = this.searchResults);
-                  qoqNewInstance.setSQL(
-                          "SELECT * " &
-                          "FROM sResults " &
-                          "WHERE search_type = '#variables.ORECORD.NEW_INSTANCE#' " &
-                            "AND matching_text LIKE '#subFuncParts[1]#%=%' "
-                      );
-                  var qryNewInstance = qoqNewInstance.execute().getResult();
-                  if (qryNewInstance.recordCount eq 1) {
-                    foundPath = true;
-                    subCompPath = reMatchNoCase("=.*\(", qryNewInstance.matching_text);
-                    subCompPath = replace(subCompPath[1], "=", "");
-                    subCompPath = replace(subCompPath, "(", "");
-                    subCompPath = reReplaceNoCase(subCompPath, "new\s", "");
-                  }
-                }
-                
-                // Retrieve component name and actual component path when path info was found
-                if (foundPath) {
-                  subCompName = listLast(subCompPath, ".");
-                  subCompPath = listDeleteAt(subCompPath, listLen(subCompPath, "."), ".");
-                  if (listFirst(subCompPath, ".") eq webAppName) {
-                    subCompPath = listRest(subCompPath, ".");
-                  }
-                }
-              }
-            }
-            
-            if (showNonNARecords eq false and subCompPath neq "NA") {
-              continue;
-            }
-            // Exclude specified components / functions
-            if (listFindNoCase(lstExcludeFunctions, subFuncName) gt 0) {
-              continue;
-            }
-            if (len(tmepSearchResults.error[idxTSR]) neq 0) {
-              errorMsg = tempSearchResults.error[idxTSR];
-            }
-            
-            // Build results in structure format
-            thisElem = tempSearchREsults.Folder[idxTSR] & "." & tempSearchResults.component[idxTSR] & "." & tempSearchResults.function[idxTSR];
+            // Biuld stucture format
+            var thisElem = tempSearchResults.Folder[idxTSR] & "." & tempSearchResults.Component[idxTSR] & "." & tempSearchResults.Function[idxTSR];
             if (tempSearchResults.recordCount gt 0 and not structKeyExists(structFuncResults, thisElem)) {
               structFuncResults[thisElem] = structNew();
-              structFuncResutls[thisElem].Error = errorMsg;
+              structFuncResults[thisElem].Error = errorMsg;
               structFuncResults[thisElem].SubComponents = arrayNew(1);
             }
             
-            arrayAppend(structFuncResults[thisElem].SubComponents, structNew());
-            idxArraySubComp = arrayLen(structFuncResults[thisElem].SubComponents);
-            thisSubElem = subCompPath & "." & subCompName & "." & subFuncName;
-            structFuncResults[thisElem].SubComponents[idxArraySubComp][thisSubElem] = structNew();
-            structFuncResults[thisElem].SubComponents[idxArraySubComp][thisSubElem].Error = errorMsg;
+            // read sub-component value from the matching search result
+            var compMatchingText = "";
+            if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_TAG
+                  or tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_SCRIPT) {
+              var qoqSubComp = new query();
+              qoqSubComp.setDBType("query");
+              qoqSubComp.setAttributes(tSResults = tempSearchResults);
+              qoqSubComp.setSQL(
+                      "SELECT * " &
+                      "FROM tSResults " &
+                      "WHERE (matching_text LIKE '%component%=%' " &
+                        "AND group_id = #tempSearchResults.group_id[idxTSR]#) "
+                  );
+              qoqSubComp = qoqSubComp.execute().getResult();
+              compMatchingText = tempSearchResults.matching_text;
+            } else if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.INVOKE) {
+              compMatchingText = tempSearchResults.matching_text[idxTSR];
+            }
+            try {
+              subCompName = reMatchNoCase("component="".+?""", compMatchingText);
+              subCompName = listToArray(subCompoName[1], """")[2];
+            } catch (expression e) {
+              subCompName = tempSearchResults.component[idxTSR];
+            }
             
-            queryAddRow(this.funcFinalResults);
-            querySetCell(this.funcFinalResults, "Folder", tempSearchResults.folder[idxTSR]);
+            // Get function name
+            var funcMatchingText = "";
+            if (tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_TAG
+                  or tempSearchResults.search_type[idxTSR] eq variables.ORECORD.ASSIGN_SCRIPT) {
+              var qoqSubFunc = new query();
+              qoqSubFunc.setDBType("query");
+              qoqSubFunc.setAttributes(tSResults = tempSearchResults);
+              qoqSubFunc.setSQL(
+                      "SELECT * " &
+                      "FORM tSResults " &
+                      "WHERE (matching_text LIKE '%function%=%' " &
+                            "OR matching_text LIKE '%method%=%') " &
+                          "AND group_id = #tempSearchResults.group_id[idxTSR]# "
+                  );
+              var getSubFunc = qoqSubFun.execute().getResult();
+              funcMatchingText = getSubFunc.matching_text;
+              newIdxTSR = idxTSR + 1;
+            } else {
+              funcMatchingText = tempSearchResults.matching_text[idxTSR];
+            }
+            var subFuncName = reMatchNoCase("(method|function)="".+?""", funcMatchingText);
+            subFuncName = listToArray(subFuncName[1], """")[2];
+            
+            // Get sub component path
+            var subCompObj = "";
+            var metaInfo = "";
+            try {
+              if (left(subCompName, 1) eq "##" and right(subCompname, 1) eq "##") {
+                metaInfo = getMetaData(evaluate(subCompName));
+                subCompName = listLast(metaInfo.name, ".");
+              } else {
+                if (left(tempSearchResults.folder[idxTSR], 4) eq "obj.") {
+                  // Get property type for component path
+                  var objMeta = getComponentMetaData(subCompName);
+                  // Index of property in array
+                  var idxProp = arrayFind(objMeta.properties, listLast(subCompName, "."));
+                  var propType = objMeta.properties[idxProp].type;
+                  metaInfo = getComponentMetaData(propType);
+                } else {
+                  subCompName = replaceNoCase(subCompName, "APPLICATION.", "");
+                  var subCompObj = evaluate("Application.#subCompName#");
+                  metaInfo = getMetaData(subCompObj);
+                }
+              }
+            } catch (expression e) {
+              if (subCompName eq "NA" and showNARecords eq false) {
+                continue;
+              }
+            }
+            var subCompPath = "";
+            if (not isDefined("metaInfo.type")) {
+              subCompPath = "NA";
+              if (subCompName neq "NA" and subCompName neq "this") {
+                errorMsg = "Sub-component not found";
+              }
+            } else if (metaInfo.type neq "component") {
+              subCompPath = "NA";
+              errorMsg = "Invalid sub-component (type: #metaInfo.type#);
+            } else {
+              subCompPath = metaInfo.fullName;
+              subCompPath = listChangeDelims(subCompPath, ",", ".");
+              subCompPath = listDeleteAt(subCompPath, 1);
+              subCompPath = listDeleteAt(subCompPath, listLen(subCompPath));
+              subCompPath = listChangeDelims(subComppath, ".", ",");
+            }
+            if (showNonNARecords eq false and subCompPath neq "NA") {
+              continue;
+            }
+            
+            // Get found sub-functions list for current sub-component
+            if (listFindNoCase(lstExcludeFunctions, subFuncName) gt 0) {
+              continue;
+            }
+            arrayAppend(structFuncResults[thisElem].subComponents, structNew());
+            var idxArraySubComp = arrayLen(structFuncResults[thisElem].subComponents);
+            thisSubElem = subCompPath & "." & subCompName & "." & subFuncName;
+            structFuncResults[thisElem].subComponents[idxArraySubComp][thisSubElem] = structNew();
+            structFuncResults[thisElem].subComponents[idxArraySubComp][thisSubElem].Error = errorMsg;
+            
+            queryAddrow(this.funcFinalResults);
+            querySetCell(this.funcFinalResults, "Folder", tempSearchResults.Folder[idxTSR]);
             querySetCell(this.funcFinalResults, "Component", tempSearchResults.Component[idxTSR]);
+            querySetCell(this.funcFinalResults, "Function", tempSearchResults.Function[idxTSR]);
             querySetCell(this.funcFinalResults, "Sub_Component_Path", subCompPath);
-            querySetCell(this.funcFinalResults, "Sub_Component", subCompName);
-            querySetCell(this.funcFinalResults, "Sub_Function", subFuncName);
+            querySetCell(this.funcFinalResults, "Sub_Component", subFuncName);
             querySetCell(this.funcFinalResults, "Error", errorMsg);
+            // Update loop counter
+            idxTSR = newIdxTSR;
           }
-        } // End of if desired results type is OTHER_FUNC_CALLS
-      } // End of if no search results
+        }
+      } // End of if desired results type is ASSIGN_INVOKE
       
-      return this.funcFinalResults;
+      // Biuld results for all other component function calls
+      if (listFind(searchFor, variables.ORECORD.OTHER_FUNC_CALLS) gt 0) {
+        // Filter search results on the basis of result type
+        var qoqTempSResults = new query();
+        qoqTempSResults.setDBType("query);
+        qoqTempSResults.setAttributes(sResults = this.searchResults);
+        qoqTempSResults.setSQL(
+                "SELECT * " &
+                "FROM sResults " &
+                "WHERE search_type = '#variables.ORECORD.OTHER_FUNC_CALLS#' "
+            );
+        var tempSearchResults = qoqTempSResults.execute().getResults();
+        
+        // Save formatted results
+        for (var idxTSR=1; idxTSR lte tempSearchResults.recordCoun; idxTSR++) {
+          new newIdxTSR = idxTSR;
+          subCompPath = "";
+          subCompName = "";
+          subFuncName = "";
+          errorMsg = "";
+          
+          // Get sub-component path
+          metaInfo = structNew();
+          var subCompObj = "";
+          try {
+            if (len(tempSearchResults.folder[idxTSR]) gt 0) {
+              metaInfo = getComponentMetaData(tempSearchResults.folder[idxTSR] & "." & tempSearchResults.component[idxTSR]);
+            } else {
+              metaInfo = getComponentMetaData(tempSearchResults.component[idxTSR]);
+            }
+          } catch (expression e) {
+            var subCompObj = evaluate("Application.#tempSearchResults.component[idxTSR]#");
+            metaInfo = getMetaData(subCompObj);
+          }
+          
+          // Get sub-component and sub-function name
+          var subFuncFullPath = replace(tempSearchResults.matching_text[idxTSR], "(", "");
+          var subFuncParts = listToArray(subFuncFullPath, ".");
+          var subFuncPartsCount = arrayLen(subFuncParts);
+          var subFuncName = subFuncParts[subFuncPartsCounts];
+          
+          // Check if function really exists in current component, if not then it must in parent component
+          if (subFuncPartsCount eq 1) {
+            // If function name is a coldfusion function then ignore
+            if (arrayFindNoCase(this.cfFunctions, subFuncName) gt 0
+                or arrayFindNoCase(this.cfFunctions, "cf" & subFuncName) gt 0) {
+              continue;
+            }
+            
+            var currCompFunc = "";
+            var foundInCurrComp = false;
+            currCompFunc = metaInfo.functions;
+            for (var idxCFunc=1; idxCFunc lte arrayLen(currCompFunc); idxCFunc++) {
+              if (subFuncName eq currCompFunc[idxCFunc].name) {
+                foundInCurrComp = true;
+                subCompPath = tempSearchResults.folder[idxTSR];
+                subCompName = tempSearchResults.component[idxTSR];
+                break;
+              }
+            }
+            
+            if (not foundInCurrComp and structKeyExists(metaInfo, "extends") and isStruct(metaInfo.extends)) {
+              var subCompFullPath = metaInfo.extends.fullName;
+              subCompName = listLast(subCompFullPath, ".");
+              subCompPath = listDeleteAt(subCompFullPath, listLen(subCompFullPath, "."), ".");
+              if (listGetAt(subCompPath, 2, ".") neq "obj.") {
+                subCompPath = listDeleteAt(subCompPath, 1, ".");
+              }
+            }
+          } else if (subFuncPartsCount gt 2) {
+            if (subFuncParts[1] eq "application") {
+              // Evaluate component path (without function name)
+              compObj = evaluate(listDeleteAt(subFuncFullPath, listLen(subFuncFullPath, "."), "."));
+              metaInfo = getMetaData(compObj);
+              subCompName = listLast(metaInfo.name, ".");
+              subCompPath = listDeleteAt(metaInfo.name, listLen(metaInfo.name, "."), ".");
+              if (listFirst(subCompPath, ".") eq webAppName) {
+                subCompPath = listRest(subCompPath, ".");
+              }
+            } else {
+              subCompPath = arrayToList(subFuncParts);
+              subCompName = subFuncParts[subFuncPartsCount-1];
+              subCompPath = listDeleteAt(subCompPath, subFuncPartsCount);
+              subCompPath = listDeleteAt(subCompPath, subFuncPartsCount-1);
+              subCompPath = listChangeDelims(subCompPath, ".");
+            }
+          } else if (subFuncPartsCount gt 1) {
+            subCompName = subFuncParts[subFuncPartsCount-1];
+            if (subFuncParts[1] eq "this.") {
+              // Current component
+              subCompPath = tempSearchResults.folder[idxTSR];
+              subCompName = tempSearchResults.component[idxTSR];
+            } else {
+              ///////////// Find path within component //////////////
+              var foundPath = false;
+              // Find in arguments
+              funcList = metaInfo.functions;
+              for (var idxFunc=1; idxFunc lte arrayLen(funcList); idxFunc++) {
+                if (funcList[idxFunc].name eq tempSearchResults.function[idxTSR]) {
+                  for (var idxFParam=1; idxFParam lte arrayLen(funcList[idxFunc].parameters); idxFParam++) {
+                    if (funcList[idxFunc.parameters[idxFParam].name eq subCompName) {
+                      foundPath = true;
+                      subCompPath = funcList[idxFunc].parameters[idxFParam].type;
+                    }
+                  }
+                }
+              }
+              // Find in properties of current component
+              if (not foundPath and structKeyExists(metaInfo, "properties")) {
+                for (var idxProp=1; idxProp lte arrayLen(metaInfo.properties); idxProp++) {
+                  if (metaInfo.properties[idxProp].name eq subCompName) {
+                    foundPath = true;
+                    subCompPath = metaInfo.propertiesp[idxProp].type;
+                    break;
+                  }
+                }
+              }
+              // Find in variables of current component
+              if (not foundPath) {
+                // Filter variable declarations in search results
+                var qoqNewInstance = new query();
+                qoqNewInstance.setDBType("query");
+                qoqNewInstance.setAttributes(sResults = this.searchResults);
+                qoqNewInstance.setSQL(
+                        "SELECT * " &
+                        "FROM sResults " &
+                        "WHERE search_type = '#variables.ORECORD.NEW_INSTANCE#' " &
+                          "AND matching_text LIKE '#subFuncParts[1]#%=%' "
+                    );
+                var qryNewInstance = qoqNewInstance.execute().getResult();
+                if (qryNewInstance.recordCount eq 1) {
+                  foundPath = true;
+                  subCompPath = reMatchNoCase("=.*\(", qryNewInstance.matching_text);
+                  subCompPath = replace(subCompPath[1], "=", "");
+                  subCompPath = replace(subCompPath, "(", "");
+                  subCompPath = reReplaceNoCase(subCompPath, "new\s", "");
+                }
+              }
+              
+              // Retrieve component name and actual component path when path info was found
+              if (foundPath) {
+                subCompName = listLast(subCompPath, ".");
+                subCompPath = listDeleteAt(subCompPath, listLen(subCompPath, "."), ".");
+                if (listFirst(subCompPath, ".") eq webAppName) {
+                  subCompPath = listRest(subCompPath, ".");
+                }
+              }
+            }
+          }
+          
+          if (showNonNARecords eq false and subCompPath neq "NA") {
+            continue;
+          }
+          // Exclude specified components / functions
+          if (listFindNoCase(lstExcludeFunctions, subFuncName) gt 0) {
+            continue;
+          }
+          if (len(tmepSearchResults.error[idxTSR]) neq 0) {
+            errorMsg = tempSearchResults.error[idxTSR];
+          }
+          
+          // Build results in structure format
+          thisElem = tempSearchREsults.Folder[idxTSR] & "." & tempSearchResults.component[idxTSR] & "." & tempSearchResults.function[idxTSR];
+          if (tempSearchResults.recordCount gt 0 and not structKeyExists(structFuncResults, thisElem)) {
+            structFuncResults[thisElem] = structNew();
+            structFuncResutls[thisElem].Error = errorMsg;
+            structFuncResults[thisElem].SubComponents = arrayNew(1);
+          }
+          
+          arrayAppend(structFuncResults[thisElem].SubComponents, structNew());
+          idxArraySubComp = arrayLen(structFuncResults[thisElem].SubComponents);
+          thisSubElem = subCompPath & "." & subCompName & "." & subFuncName;
+          structFuncResults[thisElem].SubComponents[idxArraySubComp][thisSubElem] = structNew();
+          structFuncResults[thisElem].SubComponents[idxArraySubComp][thisSubElem].Error = errorMsg;
+          
+          queryAddRow(this.funcFinalResults);
+          querySetCell(this.funcFinalResults, "Folder", tempSearchResults.folder[idxTSR]);
+          querySetCell(this.funcFinalResults, "Component", tempSearchResults.Component[idxTSR]);
+          querySetCell(this.funcFinalResults, "Sub_Component_Path", subCompPath);
+          querySetCell(this.funcFinalResults, "Sub_Component", subCompName);
+          querySetCell(this.funcFinalResults, "Sub_Function", subFuncName);
+          querySetCell(this.funcFinalResults, "Error", errorMsg);
+        }
+      } // End of if desired results type is OTHER_FUNC_CALLS
+    } // End of if no search results
+    
+    return this.funcFinalResults;
+  }
+
+  /**
+  * Format result for found stored procedure calls
+  */
+  public query function getSPDependency() {
+    if (this.searchResults.recordCount eq 0) {
+      if (showNARecords) {
+        queryAddRow(this.spFinalResults);
+        querySetCell(this.spFinalResults, "Folder", "NA");
+        querySetCell(this.spFinalResults, "Component", "NA");
+        querySetCell(this.spFinalResults, "DB_Package", "NA");
+        querySetCell(this.spFinalResults, "DB_Stored_Procedure", "NA");
+        querySetCell(this.spFinalResults, "Error", "No search results");
+      }
+    } else {
+      // Build results for stored procedure calls
+      if (listFind(searchFor, variables.ORECORD.SP_CALLS) gt 0) {
+        // Filter search results on the basis of result type
+        var qoqTempSResults = new query();
+        qoqTempSResults.setDBType("query");
+        qoqTempSResults.setAttributes(sResults = this.searchResults);
+        qoqTempSResults.setSQL(
+                "SELECT * " &
+                "FROM sResults " &
+                "WHERE search_type = '#variables.ORECROD.SP_CALLS#' "
+            );
+        var tempSearchResults = qoqTempSResults.execute().getResult();
+        
+        // Save formatted results
+        for (var idxTempSResult=1; idxTempSResult lte tempSearchResults.recordCount; idxTempSResult++) {
+          // Get DB package and SP name
+          procedureText = reMatchNoCase("procedure="".*?""", tempSearchResults.matching_text[idxTempSResults]);
+          if (arrayLen(procedureText) eq 0) {
+            var pkgName = "NA";
+            var spName = "NA";
+            if (not showNARecords) {
+              continue;
+            }
+          } else {
+            var spPath = reMatchNoCase(""".*(?="")", procedureText[1]);
+            spPath = replace(spPath[1], """", "");
+            pkgName = listGetAt(spPath, 1, ".");
+            spName = listGetAt(spPath, 2, ".");
+          }
+          if (len(tempSearchResults.error) neq 0) {
+            errorMsg = tempSearchResults.error;
+          }
+          queryAddRow(this.spFinalResults);
+          querySetCell(this.spFinalResults, "Folder", tempSearchResults.folder[idxTempSResult]);
+          querySetCell(this.spFinalResults, "Component", tempSearchResults.component[idxTempSResult]);
+          querySetCell(this.spFinalResults, "Function", tempSearchResults.function[idxTempSResult]);
+          querySetCell(this.spFinalResults, "DB_Package", pkgName);
+          querySetCell(this.spFinalResults, "DB_Stored_Procedure", spName);
+          querySetCell(this.spFinalResults, "Error", errorMsg);
+        }
+      } 
+    } // End of if no search results found
+    
+    return this.spFinalResults;
+  }
+  
+  /**
+  * Custom function for dump. This function dumps the value of given variable on the basis of debugging settings
+  * @dumpVar Variable whose value should be dumped
+  * @dumpLabel Label of dumped results
+  * @dumpAbort Should abort after dump?
+  * @newline Add newline after simple value dump?
+  */
+  public void function dumpIt (
+          any dumpVar
+        , string dumpLabel
+        , boolean dumpAbort
+        , boolean newline
+    ) 
+    output = true 
+    {
+    if (debuggingSettings.allowedDump and (
+          structKeyExists(arguments, "dumpVar")
+          or structKeyExists(arguments, "dumpLabel")
+          or structKeyExists(arguments, "dumpAbort")
+      )) {
+      variables.dumpCallCurrent = variables.dumpCallCurrent + 1;
+      // Dump only when dump is allowed and it lies between specified dump call range
+      if (variables.dumpCallCurrent gte debugSettings.dumpCallsFrom
+          and ((debugSettings.dumpCallTo gt 0 and variables.dumpCallCurrent lte debugSettings.dumpCallsTo)
+          or (debugSettings.dumpCallsTo eq -1))) {
+        writeOutput("[#variables.dumpCallCurrent#]");
+        if (structKeyExists(arguments, "dumpVar")) {
+          if (isSimpleValue(arguments.dumpVar)) {
+            writeOutput("<b>#arguments.dumpLabel</b> = ");
+          }
+          writeDump(
+              var="#arguments.dumpVar#"
+            , label="#arguments.dumpLabel#"
+          );
+        } else {
+          writeOutput("------ <b>#arguments.dumpLabel#</b> -------");
+        }
+        if (structkeyExists(arugments, "newline") and arguments.newline eq true) {
+          writeOutput("<br />");
+        }
+      }
     }
+  } // End of function dumpIt()
+  
+  /**
+  * Get coldfusion functions list
+  */
+  public array function getCFFunctions(searchFolder, searchFile) {
+    var searchRecurse = "false";
+    var qryCFFunctions = queryNew("Class,Method,Return_Type", "varchar,varchar,varchar");
+    
+    searchRootPath = "coldfusion\";
+    searchFullPath = variables.cfRootParentPath & searchRootPath & searchFolder;
+    fileList = directoryList(searchFullPath, searchRecurse, "query", "*#searchFile#.class");
+    
+    var fullPath = "";
+    var relPath = "";
+    var classObj = "";
+    var classMethods = "";
+    for (var idxFile=1; idxFile lte fileList.recordCount; idxFile++) {
+      fullPath = fileList.directory[idxFile] & "\" & fileList.name[idxFile];
+      relPath = replace(fullPath, ".class", "");
+      relPath = replace(relPath, variables.cfRootParentPath, "");
+      relPath = replace("#relPath#", "\", ".", "all");
+      classObj = createObject("java", "#relPath#");
+      classMethods = classObj.getClass().getMethods();
+      
+      if (arrayLen(classMethods) gt 0) {
+        for (var idxMethod=1; idxMethod lte arrayLen(classMethods); idxMethod++) {
+          queryAddRow(qryCFFunctions);
+          querySetCell(qryCFFunctions, "Class", relPath);
+          querySetCell(qryCFFunctions, "Method", classMethods[idxMethod].getName());
+          querySetCell(qryCFFunctions, "Return_Type", classMethods[idxMethod].getReturnType());
+        }
+      }
+    }
+    
+    var qoqUniqueFunc = new query();
+    qoqUniqueFunc.setDBType("query");
+    qoqUniqueFunc.setAttributes(sFunc = qryCFFunctions);
+    qoqUniqueFunc.setSQL(
+            "SELECT DISTINCT method " &
+            "FROM sFunc "
+        );
+    var qryFunc = qoqUniqueFunc.execute().getResult();
+    var cfFunc = listToArray(valueList(qryFunc.method));
+    
+    return cfFunc;
+  }
+  
+  // Functions for debug settings
+  /**
+  * Configure allowed dump debug settings
+  * allowedDump       - Whether dump is allowed or not
+  */
+  public void function setAllowedDump (
+          required boolean allowedDump
+      ) {
+    debugSettings.allowedDump = arguments.allowedDump;
+  }
+  
+  /** Configure dump range settings for debugging
+  * A unique number is assigned to each dump call/value. All dump calls in given range will be printed. Others will be ignored. 
+  * dumpCallsFrom     - Starting number of allowed dump calls range
+  * dumpCallsTo       - Last number of allowed dump calls range. Specifiy -1 for no end.
+  */
+  public void function setDumpRange (
+          required  boolean dumpCallsFrom
+        ,           boolean dumpCallsTo
+    ) {
+    debugSettings.dumpCallsFrom = arguments.dumpCallsFrom;
+    debugSettings.dumpCallsTo = arguments.dumpCallsTo;
+  }
+  
+  // Functions for display settings
+  /**
+  * Configure initial search results display settings
+  * showSearchResults       - Whether initial search results should be displayed or not.
+  */
+  public void function setShowSearchResults (
+        required boolean showSearch
+    ) {
+    displaySettings.showSearchResults = arguments.showSearch;
+  }
