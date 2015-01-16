@@ -183,7 +183,7 @@ component accessors="true" output="false" {
     var folderFiles = new query();
     
     idxMainComp = 1;
-    for (idxMainComp=1; idxMainComp lte mainCompListLen; idxMainComp=idxMainComp+1) {
+    for (idxMainComp=1; idxMainComp lte mainCompListLen; idxMainComp++) {
       mainCompRelPath = mainCompList[idxMainComp];
       // include components / folders
       var compFilesList = arrayNew(1);
@@ -192,4 +192,125 @@ component accessors="true" output="false" {
       if (right(mainCompRelPath, 1) eq ".") {
         if (right(mainCompRelPath, 2) eq ".") {
           // Double dot notation indicates inclusion of sub-folders also. So, convert double dot to single dot for code implementation
+          exclCompRelPath = webRootPath & replaceNoCase(exclCompRelPath, ".", "\", "all");
+          exclFolders = directoryList (
+                              exclCompFullPath,
+                              exclSubFolders,
+                              "query"
+                            );
+          exclFolders = valueList(exclFolders.directory);
+          exclFolders = listToArray(exclFolders);
+        }
+        compFilesListLen = arrayLen(compFilesList);
+        var idxComp = 1;
+        while (idxComp lte compFilesListLen) {
+          var idxExclFold = 1;
+          for (idxExclFold=1; idxExclFold lte arrayLen(exclFolders); idxExclFold++) {
+            if (findNoCase(exclFolders[idxExclFold], compFilesList[idxComp]) gt 0) {
+              arrayDeleteAt(compFilesList, idxComp);
+              if (idxComp gt 1) {
+                idxComp = idxComp - 1;
+                compFilesListLen = compFilesListLen - 1;
+              }
+            }
+          }
+          idxComp = idxComp + 1;
+          compFilesListLen = arrayLen(compFilesList);
+        }
+      }
+      dumpIt (compFileslist, "After exclude components");
+      
+      compFilesListLen = arrayLen(compFilesList);
+      // Use another loop to handle folders also
+      dumpIt (dumpLabel="Starting loop over include components", newline="true");
+      var compFullPath = "";
+      var compRelPath = "";
+      var compFileData = "";
+      for (idxComp=1; idxComp lte compFilesListLen; idxComp++) {
+        compFullPath = compFilesList[idxComp];
+        compRelPath = replace(compFullPath, webRootPath, "");
+        compRelPath = replace(compRelPath, ".cfc", "");
+        compRelPath = replace(compRelPath, "\", ".", "all");
+        dumpIt (dumpVar=compFullPath, dumpLabel="Current component full path", newline="true);
+        // Get current component details
+        funcList = arrayNew(1);
+        try {
+          compFileData = fileRead(compFullPath);
           
+          ///////// Clean file text for search ////////////
+          // Remove all comments
+          compFileData = reReplace(compFileData, "//.*?\n", "", "all");
+          compFileData = reReplace(compFileData, "/\*.*?\*/", "", "all");
+          compFileData = reReplace(compFileData, "[<]!---.*?--->", "", "all");
+          // Replace tabs with single space
+          compFileData = reReplace(compFileData, "\t+", "#chr(32)#", "all");
+          // Remove unnecessary spaces
+          compFileData = reReplace(compFileData, "\s+", "#chr(32)#", "all");
+          compFileData = reReplace(compFileData, "\s=", "=", "all");
+          compFileData = reReplace(compFileData, "\s;", ";", "all");
+          compFileData = reReplace(compFileData, "\s<", "<", "all");
+          compFileData = reReplace(compFileData, "\s>", ">", "all");
+          compFileData = reReplace(compFileData, "\s,", ",", "all");
+          compFileData = reReplace(compFileData, "\s\(", "(", "all");
+          compFileData = reReplace(compFileData, "=\s", "=", "all");
+          compFileData = reReplace(compFileData, ";\s", ";", "all");
+          compFileData = reReplace(compFileData, "<\s", "<", "all");
+          compFileData = reReplace(compFileData, ">\s", ">", "all");
+          compFileData = reReplace(compFileData, ",\s", ",", "all");
+          compFileData = reReplace(compFileData, "\)\s", ")", "all");
+          
+          // get all functions if function names are not specified
+          if (arrayLen(mainFuncList) eq 0) {
+            metaObj = getComponentMetaData(compRelPath);
+            if (structKeyExists(metaObj, "functions")) {
+              funcList = metaObj.functions;
+            }
+          }
+        }
+        catch (application e) {
+          compFileData = "";
+          if (arrayLen(funcList) eq 0) {
+            funcList = ["NA"];
+          }
+        }
+        dumpIt (dumpVar="#len(compFileData)#", dumpLabel="Characters in component file", newline="true");
+        
+        if (arrayLen(mainFuncList) gt 0) {
+          funcList = duplicate(mainFuncList);
+        }
+        dumpIt (dumpVar="#arrayLen(funcList)#", dumpLabel="Number of functions in component / given list of functions", newline="true");
+        
+        // Loop through all given functions
+        var funcListLen = arrayLen(funcList);
+        var idxFunc = 1;
+        for (idxFunc=1; idxFunc lte funcListLen; idxFunc++) {
+          // Update group ID and sub items count for every new function
+          groupID = groupID + 1;
+          groupSubCount = 0;
+          
+          // Get function text
+          var func = funcList[idxFunc];
+          var funcStruct = {name="", identifier="0"};
+          if (isStruct(func)) {
+            funcStruct = structCopy(func);
+            // param name="funcStruct.identifier" type="integer", default="NA";
+            func = func.name;
+          }
+          var errorMsg = "";
+          var foundFuncStart = reFindNoCase("<cffunction [^>]*?name=""#func#", compFileData);
+          var foundFuncText = "";
+          var resultsObj = "";
+          if (foundFuncStart eq 0) {
+            // Function not found in component
+            foundFuncText = "";
+            // errorMsg = "Function not found"
+            resultsObj = errorMsg;
+          } else {
+            // Function exists in component
+            var foundFuncEnd = findNoCase("</cffunction>", compFileData, foundFuncStart);
+            foundFuncText = mid(compFileData, foundFuncStart, foundFuncEnd-foundFuncStart);
+          }
+          dumpIt (dumpVar="#len(foundFuncText)#", dumpLabel="Characters in function #func#()", newline="true");
+          
+          // Search all specified items in each function
+          for (var searchItem in searchList);
