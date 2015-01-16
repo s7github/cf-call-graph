@@ -550,7 +550,7 @@ component accessors="true" output="false" {
               }
             } else if (metaInfo.type neq "component") {
               subCompPath = "NA";
-              errorMsg = "Invalid sub-component (type: #metaInfo.type#);
+              errorMsg = "Invalid sub-component (type: #metaInfo.type#)";
             } else {
               subCompPath = metaInfo.fullName;
               subCompPath = listChangeDelims(subCompPath, ",", ".");
