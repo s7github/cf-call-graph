@@ -1,2 +1,155 @@
 <!-- This file displays two tabs to enter user values and uses ajax calls to retrieve data without loading the page -->
-<!-- To be added... -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dependency Depth</title>
+<style type="text/css">
+  input[type='text'] {
+    border: 0; 
+    border-bottom: 1px solid #CCCCCC; 
+    height: 22px;
+  } 
+  input[type='submit'] {
+    border: 1px solid #999999; 
+    border-radius: 5px; 
+    padding: 5px; 
+    background-color: #666666; 
+    letter-spacing: 26.7px; 
+    color: #FFFFFF; 
+    font-weight: bold; 
+    cursor: pointer; 
+    cursor: hand; 
+    margin-top: lOpx; 
+  } 
+  label { 
+    font-weight: bold; 
+    color: #333333; 
+    margin-right: lOpx; 
+  } 
+  .dependency { 
+    border-left: 1px solid #EFEEEE; 
+  } .
+  dependency>div { 
+    margin: Spx; 
+    margin-left: 20px; 
+    padding-left: 5px; 
+  } 
+  .dependency .sp { 
+    color: #993A33; 
+  } 
+  .dependency .variable { 
+    color: #666633; 
+  } 
+  .aGet { 
+    color: #009900; 
+    font-size: 0.8em; 
+    text-decoration: none; 
+  } 
+  .aHide { 
+    color: #FF9900; 
+    font-size: 0.8em; 
+    text-decoration: none; 
+  } 
+  .aJavadoc { 
+    font-weight: bold; 
+    text-decoration: none; 
+    color: #000000; 
+  } 
+  .hint { 
+    color: #999999; 
+    font-size: 0.8em; 
+  } 
+  .tabs { 
+    margin: 0; 
+    padding: 0; 
+    padding-bottom: 5px; 
+  } 
+  .tabs .tabActive { 
+    background-color: #609AAF; 
+    border-top: 1px solid #DDDDDD; 
+  } 
+  .tabs .tabActive a { 
+    color: #FFFFFF; 
+  } 
+  .tabs li { 
+    display: inline; 
+    padding: 5px; 
+  } 
+  .tabs a { 
+    text-decoration: none; 
+    color: #000000; 
+    outline: none; 
+  } 
+  #tabContents { 
+    border-left: 1px solid #AAAAAA; 
+    border-top: 1px solid #AAAAAA; 
+    border-right: 1px solid #000000; 
+    border-bottom: 1px solid #000000; 
+    display: inline-block; 
+    padding: 20px; 
+    width: 880px; 
+    height: 110px; 
+  } 
+</style> 
+
+<script type="text/javascript"> 
+  FORM_TYPES = { 
+    BY_COMP   : 0   // By Component path and function name 
+  , BY_TXCODE : 1   // By TxCode 
+  } 
+  
+  function pageLoad () { 
+    showFrmByComp(); 
+  }
+  
+  function submitForComp () {
+    getDependency('main', document.getElementById('mainComponent').value, document.getElementById('mainFunction').value); 
+  } 
+  
+  function submitForTxCode () { 
+    getServiceFuncDetails('main', document.getElementById('txcode').value);
+  } 
+  
+  function showFrmByComp () { 
+    document.getElementById('tabByComp').setAttribute("class", "tabActive"); 
+    document.getElementById('tabByTxCode').removeAttribute("class"); 
+    document.frmByTxCode.style.display = "none"; 
+    document.frmByComp.style.display = ""; 
+  } 
+
+  function showFrmByTxCode () { 
+    document.getElementById('tabByTxCode').setAttribute("class", "tabActive"); 
+    document.getElementById('tabByComp').removeAttribute("class"); 
+    document.frmByComp.style.display = "none"; 
+    document.frmByTxCode.style.display = ""; 
+  }
+</script> 
+</head> 
+
+<body onload="pageLoad()">
+
+<ul class="tabs">
+  <li id="tabByComp"><a href="javascript:showFrmByComp()" accesskey="C">By Component / Function</a></li> 
+  <li id="tabByTxCode"><a href="javascript:showFrmByTxCode()" accesskey="T">By TxCode</a></li> 
+</ul> 
+
+<div id="tabContents"> 
+  <div id="divByComp"> 
+  <form name="frmByComp" method="post" action="javascript:submitForComp();"> 
+    <table> 
+      <tr> 
+        <td><label for="mainComponent">Component Relative Path</label></td> 
+        <td>
+          <input type="text" id="mainComponent" size="80" value="sites.backofficeportal" /> <span class="hint">(example: sites.backofficeportal)</span> 
+        </td> 
+      </tr> 
+      <tr> 
+        <td><label for="mainFunction">Function Name</label></td> 
+        <td> 
+          <input type="text" id="mainFunction" size="80" value="getPageByURL" /> <span class="hint">(example: getPageByURL)</span> 
+        </td> 
+      </tr> 
+      <tr> 
+        <td></td> 
+        <td> 
+          <input type="submit" value="Get Dependency" /> 
