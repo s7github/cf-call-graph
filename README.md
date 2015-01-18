@@ -11,6 +11,7 @@ v0.1 features:
 * Ability to export graph to other formats
 * Search dependency in single file, multiple files or whole folder (recursively or non-recursively)
 
-Future plans:
+Future releases:
+* Store CSS & JS in separate folder/files.
 * Use graphviz to display relationships using graphical shapes.
-* Make this tool more generic to be compatible with different code models.
+* Make this tool more generic to be compatible with different code models. 
