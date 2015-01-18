@@ -2,16 +2,23 @@
 Tool to generate call graph for coldfusion code. 
 
 How it works:
-This tool looks into coldfusion code files for some defined patterns and this parsed information is transformed into coldfusion query results which is later used by qryDependency.cfm file for formatting information in desired manner. It uses Coldfusion's core cfusion.jar file to exclude coldfusion default functions and keywords.
+This tool looks into coldfusion code files for some defined search patterns and matching code information (in coldfusion query format) is used by qryDependency.cfm file. It generates dependency information in graph/text format and sends back to html tool (drawDependency.html). 
+
+Requirements:
+* Coldfusion component path and function name whose dependency is to be found.
+* Coldfusion's core cfusion.jar file to exclude coldfusion default functions and keywords from displayed results.
 
 v0.1 features:
-* Dependency graph of components
-* Dependency graph of functions
-* Dependency in different formats: graph, text
-* Ability to export graph to other formats
-* Search dependency in single file, multiple files or whole folder (recursively or non-recursively)
+* Search dependency in single file, multiple files or whole folder (recursively or non-recursively).
+* Displays dependency information of sub-function and stored procedures used within specified function.
+* Display dependency information in text format.
+* Can link this dependency information to javadoc (generated separately by colddoc).
 
 Future releases:
 * Store CSS & JS in separate folder/files.
 * Use graphviz to display relationships using graphical shapes.
 * Make this tool more generic to be compatible with different code models. 
+* Dependency graph of components
+* Dependency graph of functions
+* Dependency in different formats: graph, text
+* Ability to export graph to other formats
