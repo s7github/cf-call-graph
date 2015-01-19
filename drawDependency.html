@@ -106,10 +106,6 @@
     getDependency('main', document.getElementById('mainComponent').value, document.getElementById('mainFunction').value); 
   } 
   
-  function submitForTxCode () { 
-    getServiceFuncDetails('main', document.getElementById('txcode').value);
-  } 
-  
   function showFrmByComp () { 
     document.getElementById('tabByComp').setAttribute("class", "tabActive"); 
     document.getElementById('tabByTxCode').removeAttribute("class"); 
@@ -185,33 +181,51 @@
   function getDependency (elemID, comp, func) { 
     var xmlHTTP; 
     
-    if (windov.XMLHttpRequest) { 
+    if (window.XMLHttpRequest) { 
       xmlHTTP = new XMLHttpRequest(); 
     } else { 
       xmlHTTP = new ActiveXObject("Microsoft.XMLHTTP"); 
     } 
+    
     divElem = document.getElementById('div_' + elemID); 
     divElem.innerHTML = "Getting dependency..."; 
     xmlHTTP.onreadystatechange = function () { 
-      if (xm1HTTP.readyState == 4 && xm1HTTP.status == 200) { 
+      if (xmlHTTP.readyState == 4 && xmlHTTP.status == 200) { 
         // Add sub function details to parent function 
         divElem.innerHTML = buildParentText(elemID, comp, func); 
         divElem.innerHTML = divElem.innerHTML + xmlHTTP.responseText; 
       } 
-      xmIHTTP.open("GET", uss_OryDependency.cfm2comp=" + comp + "&func=" + func, true); xm1HTTP.send(); 
-} 
-function getServiceFuncDetails(elemID, txcode) { var xm1HTTP; var compFunc = ""; 
-} 
-if (window.XMLHttpRequest) ( xm1HTTP = new XMLHttpRequest(); ) else ( xm1HTTP = new ActiveXObjectrMicrosoft.XMLHTTP"); } 
-divElem = document.getElementByIdycliv2 + elemID); divElem.innerHTML = "Getting service function details..."; xm1HTTP.onreadystatechange = function 0 ( if (xm1HTTP.readyState == 4 && xm1HTTP.status == 200) ( // Update component and function textbox values in other tab compFunc = xmIHTTP.responseText.split(9"); comp = compFunc[0]; func = compFunc[1]; document.getElementByIdymainComponent1).value = comp; document.getElementByIdymainFunction').value = func; divElem.innerHTML = "Getting dependency..."; submitForComp(); 
-} 
-} 
-xmIHTTP.open("GET", uss_getServiceFunctionDetails.cfm2txcode=" + txcode, true); xm1HTTP.send(); 
-function buildParentText(elemID, comp, func) ( // Javadoc link compPath = comp.replace0./g, "I"); compPath = compPath.replace(/Ablend)//, "9; comp = comp.replace(/Ablend)./, "9; hrefJavadoc = "http://ing2/ssharma/ws blend doc/blend/" + compPath + ".html#" + func 
-htmlText = "Ca href=1"" + hrefJavadoc + "1" class=1"aJavadocl" target=1"_blankl">" + htmlText = htmlText + " Ca id=lua " + elemID + "1" class=1"aHidel" href=1"javascript: 
-return htmlText; 
-} 
-function hideDependency(elemID, comp, func) ( // Reset div contents divElem = document.getElementByIdydiv2 + elemID); divElem.innerHTML = buildParentText(elemID, comp, func); // Enable get dependency link 
-+ "0"; 
-func + "C/a> (" + comp + ")"; hideDependency('" + elemID + "', '" + comp + "', '" + func + "')1r 
+    }
+      
+    xmlHTTP.open("GET", uss_qryDependency.cfm2comp=" + comp + "&func=" + func, true); 
+    xmlHTTP.send(); 
+  } 
 
+  function buildParentText (elemID, comp, func) { 
+    // Javadoc link 
+    compPath = comp.replace(/\./g, "/");
+    // Replace webAppName by coldfusion application name
+    compPath = compPath.replace(/^webAppName\//, ""); 
+    comp = comp.replace(/^webAppName\./, ""); 
+    hrefJavadoc = "http://my_doc/webAppName/" + compPath + ".html#" + func + "()";
+    
+    htmlText = "<a href=\"" + hrefJavadoc + "\" class=\"aJavadoc\" target=\"_blank\">" + func + "</a> (" + comp + ")";
+    htmlText = htmlText + " <a id=\"a_" + elemID + "\" class=\"aHide\" href=\"javascript:hideDependency('" + elemID + "', '"  + comp + "', '" + func + "')\">Hide Details</a>";
+  
+    return htmlText; 
+  } 
+  
+  function hideDependency (elemID, comp, func) ( 
+    // Reset div contents 
+    divElem = document.getElementById('div_' + elemID); 
+    divElem.innerHTML = buildParentText (elemID, comp, func); 
+    // Enable get dependency link 
+    aElem = document.getElementById('a_' + elemID);
+    aElem.setAttribute("href", "javascript:getDependency('" + elemID + "', '" + comp + "', '" + func + "')");
+    aElem.setAttribute("class", "aGet");
+    aElem.innerHTML = "Get Dependency";
+  }
+</script>
+
+</body>
+</html>
