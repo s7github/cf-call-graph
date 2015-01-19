@@ -2,7 +2,7 @@
 Tool to generate call graph for coldfusion code. 
 
 How it works:
-This tool looks into coldfusion code files for some defined search patterns and matching code information (in coldfusion query format) is used by qryDependency.cfm file. It generates dependency information in graph/text format and sends back to html tool (drawDependency.html). 
+This tool looks into coldfusion code files for some defined search patterns and matching code information (in coldfusion query format) is used by qryDependency.cfm file. It generates dependency information in graph/text format and sends back to html tool (drawDependency.html). This tool was developed to find dependencies in a particular project so it's not generic yet. I have plans to make this code more generic, clean and feature rich.
 
 Requirements:
 * Coldfusion component path and function name whose dependency is to be found.
