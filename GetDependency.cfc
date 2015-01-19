@@ -958,3 +958,33 @@ component accessors="true" output="false" {
     ) {
     displaySettings.showSearchResults = arguments.showSearch;
   }
+
+  /**
+  * Configure display settings for NA records in final search results.
+  * showNARecords           - Whether NA records should be displayed or not in final search results.
+  */
+  public void function setShowNARecords (
+        required boolean showNA
+    ) {
+    displaySettings.showNARecords = arguments.showNA;
+  }
+  
+  /**
+  * Configure display settings for Non-NA records in final search results.
+  * showNonNARecords        - Whether records other than NA should be displayed or not in final search results.
+  */
+  public void function setShowNonNARecords (
+        required boolean showNonNA
+    ) {
+    displaySettings.showNonNARecords = arguments.showNonNA;
+  }
+  
+  /**
+  * Configure display settings for unique records in final search results
+  * showUniqueRecords       - Whether unique records should be displayed or not in final search results.
+  */
+  public void function setShowUniqueRecords (
+        required boolean showUnique
+    ) {
+    displaySettings.showUniqueRecords = arguments.showUnique;
+  }
