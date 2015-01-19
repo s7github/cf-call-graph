@@ -55,7 +55,12 @@
     } 
     subCompPath = funcDep.Sub_Component_Path[idxFDep] & "." & funcDep.Sub_Component[idxFDep]; 
     subFuncPath = subCompPath & "." & funcDep.Sub_Function[idxFDep]; 
-    subFuncPathForLink = replace(subCompPath, ".", "/", "all") & ".html##" & funcDep.Sub_Function[idxFDep] & "()"; 
-    if (reFind("[M] 2LOCALSCOPE[.]?", funcDep.Sub_Function[idxFDep]) gt 0 or reFind("[M] 2LOCALSCOPE[.]?", funcDep.Sub_Component[idxFDep]) or reFind("[M] 2LOCALSCOPE[.]?", funcDep.Sub_Component_Path[idxFDep])) ( subFuncPathForDisp = funcDep.Sub_Function[idxFDep] & " (" & subCompPath & ")"; htmlFText = htmlFText & "Cdiv class=""variable"">#subFuncPathForDisp#C/div>"; else ( subFuncPathForDisp = "Ca href=""http://ing2/ssharma/ws_blend_doc/blend/#subFuncPathForLinke" target=""_blank" class=""aJavadoc"">" & funcDep.Subi subFuncPathForlD = replace(subFuncPath, ".", "I", "all") & idxFDep & getTickCount(); htmlFText = htmlFText & "atilt id=""divitsubFuncPathForIDe" class=""dependency"">#subFuncPathForDisp# " & "Ca id=""ajsubFuncPathForIDe" class=""aGet"" href=""javascript:getDependency(I#subFuncPathForID#1, 'fisubCompPath#1, '#func "C/div>"; 
-} 
-} writeOutput(htmIFText); </cfscript> 
+    subFuncPathForLink = replace(subCompPath, ".", "/", "all") & ".html##" & funcDep.Sub_Function[idxFDep] & "()";
+    subFuncPathForDisp = "<a href=""http://doc_folder/#webAppName#/#subFuncPathForLinke" target=""_blank" class=""aJavadoc"">" & funcDep.Sub_Function[idxFDep] & "</a> (" & subCompPath & ")";
+    subFuncPathForlD = replace(subFuncPath, ".", "/", "all") & idxFDep & getTickCount(); 
+    htmlFText = htmlFText & "<div id=""div_#subFuncPathForID#"" class=""dependency"">#subFuncPathForDisp# " & 
+                            "<a id=""a_#subFuncPathForID#"" class=""aGet"" href=""javascript:getDependency('#subFuncPathForID#', '#subCompPath#', '#funcDep.Sub_Function[idxFDep]#')"">Get Dependency</a>" &
+                            "</div>"; 
+  }
+  writeOutput(htmlFText);
+</cfscript> 
